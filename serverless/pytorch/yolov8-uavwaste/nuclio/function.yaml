@@ -1,0 +1,47 @@
+metadata:
+  name: pth-ultralytics-yolov8-segment
+  namespace: cvat
+  annotations:
+    name: YOLO v8 - UAV Waste Segment
+    type: detector
+    framework: pytorch
+    spec: |
+      [
+        { "id": 0, "name": "rubbish" }
+      ]
+spec:
+  description: YOLO v8 UAV Waste Detection via pytorch
+  runtime: 'python:3.9'
+  handler: main:handler
+  eventTimeout: 30s
+  build:
+    image: cvat.pth.ultralytics.yolov8.segment
+    baseImage: ultralytics/ultralytics:latest-cpu
+
+    directives:
+      preCopy:
+        - kind: USER
+          value: root
+        - kind: RUN
+          value: apt update && apt install --no-install-recommends -y libglib2.0-0
+        - kind: RUN
+          value: pip install supervision ultralytics scikit-image
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 52838
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
+
